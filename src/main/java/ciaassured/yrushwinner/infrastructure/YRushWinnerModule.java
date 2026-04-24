@@ -1,12 +1,11 @@
-package ciaassured.yrushwinner;
+package ciaassured.yrushwinner.infrastructure;
 
-import ciaassured.yrushwinner.infrastructure.InjectLogger;
-import ciaassured.yrushwinner.infrastructure.ManagedService;
 import ciaassured.yrushwinner.input.BotToggleKeybind;
 import ciaassured.yrushwinner.input.GotoCommand;
+import ciaassured.yrushwinner.navigation.plans.MultiPathPlanner;
+import ciaassured.yrushwinner.navigation.plans.PathPlanner;
 import ciaassured.yrushwinner.network.GameChatListener;
 import ciaassured.yrushwinner.navigation.AStarNavigator;
-import ciaassured.yrushwinner.navigation.DefaultStepChecker;
 import ciaassured.yrushwinner.navigation.Navigator;
 import ciaassured.yrushwinner.navigation.StepChecker;
 import ciaassured.yrushwinner.navigation.render.DebugPathRenderer;
@@ -54,9 +53,8 @@ public class YRushWinnerModule extends AbstractModule {
         });
 
         bind(PathRenderer.class).to(DebugPathRenderer.class).in(Scopes.SINGLETON);
-        bind(StepChecker.class).to(DefaultStepChecker.class).in(Scopes.SINGLETON);
+        bind(PathPlanner.class).to(MultiPathPlanner.class).in(Scopes.SINGLETON);
         bind(Navigator.class).to(AStarNavigator.class).in(Scopes.SINGLETON);
-
         Multibinder<ManagedService> services = Multibinder.newSetBinder(binder(), ManagedService.class);
         services.addBinding().to(DebugPathRenderer.class);
         services.addBinding().to(BotToggleKeybind.class);

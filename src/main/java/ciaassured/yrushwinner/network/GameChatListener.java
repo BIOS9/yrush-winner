@@ -63,16 +63,16 @@ public final class GameChatListener implements ManagedService {
         BlockPos start = client.player.getBlockPos();
         ClientWorld world = client.world;
 
-        Thread.ofVirtual().name("yrushwinner-pathfind").start(() -> {
-            List<BlockPos> path = navigator.findPath(start, new YLevelGoal(targetY));
-            client.execute(() -> {
-                if (path.isEmpty()) {
-                    logger.warn("No path found to Y={} from {}", targetY, start);
-                } else {
-                    pathRenderer.setPath(path);
-                    logger.info("Path planned to Y={}: {} steps", targetY, path.size());
-                }
-            });
-        });
+//        Thread.ofVirtual().name("yrushwinner-pathfind").start(() -> {
+//            List<BlockPos> path = navigator.findPath(start, new YLevelGoal(targetY));
+//            client.execute(() -> {
+//                if (path.isEmpty()) {
+//                    logger.warn("No path found to Y={} from {}", targetY, start);
+//                } else {
+//                    pathRenderer.setPath(path);
+//                    logger.info("Path planned to Y={}: {} steps", targetY, path.size());
+//                }
+//            });
+//        });
     }
 }

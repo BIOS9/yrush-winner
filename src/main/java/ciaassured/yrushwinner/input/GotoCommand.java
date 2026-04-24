@@ -3,7 +3,9 @@ package ciaassured.yrushwinner.input;
 import ciaassured.yrushwinner.infrastructure.InjectLogger;
 import ciaassured.yrushwinner.infrastructure.ManagedService;
 import ciaassured.yrushwinner.navigation.Navigator;
+import ciaassured.yrushwinner.navigation.goals.PathGoal;
 import ciaassured.yrushwinner.navigation.goals.YLevelGoal;
+import ciaassured.yrushwinner.navigation.plans.PathPlan;
 import ciaassured.yrushwinner.navigation.render.PathRenderer;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -17,6 +19,7 @@ import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Optional;
 
 @Singleton
 public final class GotoCommand implements ManagedService {
@@ -52,15 +55,16 @@ public final class GotoCommand implements ManagedService {
                         }
 
                         BlockPos start = client.player.getBlockPos();
-                        List<BlockPos> path = navigator.findPath(start, new YLevelGoal(targetY));
+                        Optional<PathPlan> path = navigator.findPath(start, new YLevelGoal(targetY));
 
                         if (path.isEmpty()) {
                             ctx.getSource().sendFeedback(Text.literal("No path found to Y=" + targetY));
                             logger.info("goto Y={} from {} — no path found", targetY, start);
                         } else {
-                            pathRenderer.setPath(path);
-                            ctx.getSource().sendFeedback(Text.literal("Path to Y=" + targetY + " (" + path.size() + " steps)"));
-                            logger.info("goto Y={} from {} → {} steps", targetY, start, path.size());
+                            List<BlockPos> completePath = path.get().getCompletePath();
+                            pathRenderer.setPath(completePath);
+                            ctx.getSource().sendFeedback(Text.literal("Path to Y=" + targetY + " (" + completePath.size() + " steps)"));
+                            logger.info("goto Y={} from {} → {} steps", targetY, start, completePath.size());
                         }
 
                         return Command.SINGLE_SUCCESS;
