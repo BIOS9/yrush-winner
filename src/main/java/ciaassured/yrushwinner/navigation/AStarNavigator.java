@@ -1,18 +1,15 @@
 package ciaassured.yrushwinner.navigation;
 
 import ciaassured.yrushwinner.navigation.goals.PathGoal;
+import ciaassured.yrushwinner.navigation.plans.PathPlan;
+import ciaassured.yrushwinner.navigation.plans.PathPlanner;
+import ciaassured.yrushwinner.navigation.plans.RootPathPlan;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 
-@Singleton
 public class AStarNavigator implements Navigator {
     // IDEAS
     // Replace StepChecker with PathPlanner
@@ -26,95 +23,44 @@ public class AStarNavigator implements Navigator {
 
     private static final int MAX_NODES = 100_000;
 
-    private final StepChecker stepChecker;
+    private final PathPlanner pathPlanner;
 
     @Inject
-    public AStarNavigator(StepChecker stepChecker) {
-        this.stepChecker = stepChecker;
+    public AStarNavigator(PathPlanner pathPlanner) {
+        this.pathPlanner = pathPlanner;
     }
 
     @Override
-    public List<BlockPos> findPath(BlockPos start, PathGoal goal) {
-        PriorityQueue<NavNode> open = new PriorityQueue<>();
-        Map<BlockPos, Double> gScores = new HashMap<>();
-        Map<BlockPos, BlockPos> parents = new HashMap<>();
+    public Optional<PathPlan> findPath(BlockPos start, PathGoal goal) {
+        PriorityQueue<PathPlan> open = new PriorityQueue<>();
+        Map<BlockPos, Double> lowestTimeCosts = new HashMap<>();
 
         double startH = goal.heuristic(start);
-        open.add(new NavNode(start, 0.0, startH, null));
-        gScores.put(start, 0.0);
+        open.add(new RootPathPlan(start));
+        lowestTimeCosts.put(start, 0.0);
 
         int visited = 0;
         while (!open.isEmpty() && visited < MAX_NODES) {
-            NavNode current = open.poll();
+            PathPlan current = open.poll();
 
-            if (goal.isGoal(current.pos)) {
-                return reconstructPath(parents, current.pos, start);
+            if (goal.isGoal(current.getPos())) {
+                return Optional.of(current);
             }
 
             // Skip stale entries (open set may hold outdated nodes for same pos).
-            if (current.gCost > gScores.getOrDefault(current.pos, Double.MAX_VALUE)) {
+            if (current.getRealTimeCost() > lowestTimeCosts.getOrDefault(current.getPos(), Double.MAX_VALUE)) {
                 continue;
             }
             visited++;
 
-            for (BlockPos neighbour : neighbours(current.pos)) {
-                if (!stepChecker.canMove(current.pos, neighbour)) {
-                    continue;
-                }
-
-                double tentativeG = current.gCost + edgeCost(current.pos, neighbour);
-                if (tentativeG < gScores.getOrDefault(neighbour, Double.MAX_VALUE)) {
-                    gScores.put(neighbour, tentativeG);
-                    parents.put(neighbour, current.pos);
-                    open.add(new NavNode(neighbour, tentativeG, goal.heuristic(neighbour), current));
+            for (PathPlan neighbour : pathPlanner.getNeighbours(current, goal)) {
+                if (neighbour.getRealTimeCost() < lowestTimeCosts.getOrDefault(neighbour.getPos(), Double.MAX_VALUE)) {
+                    lowestTimeCosts.put(neighbour.getPos(), neighbour.getRealTimeCost());
+                    open.add(neighbour);
                 }
             }
         }
 
-        return Collections.emptyList();
-    }
-
-    // All positions reachable in a single step (≤1 block in each axis, excluding self).
-    private static Iterable<BlockPos> neighbours(BlockPos pos) {
-        List<BlockPos> result = new ArrayList<>(26);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;
-                    result.add(pos.add(dx, dy, dz));
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Edge weight in seconds.
-     *   same Y  → horizontal distance / sprint speed
-     *   up 1    → above + JUMP_PENALTY
-     *   down 1  → horizontal distance / sprint speed (fall is free)
-     */
-    private static double edgeCost(BlockPos from, BlockPos to) {
-        int dx = to.getX() - from.getX();
-        int dy = to.getY() - from.getY();
-        int dz = to.getZ() - from.getZ();
-        double horizDist = Math.sqrt((double) dx * dx + (double) dz * dz);
-        double moveCost = horizDist / TimeCostModel.SPRINT_SPEED_BPS;
-        if (dy == 1) {
-            moveCost += TimeCostModel.JUMP_PENALTY_S;
-        }
-        return moveCost;
-    }
-
-    private static List<BlockPos> reconstructPath(Map<BlockPos, BlockPos> parents,
-                                                   BlockPos goal, BlockPos start) {
-        List<BlockPos> path = new ArrayList<>();
-        BlockPos cur = goal;
-        while (!cur.equals(start)) {
-            path.add(cur);
-            cur = parents.get(cur);
-        }
-        Collections.reverse(path);
-        return path;
+        return Optional.empty();
     }
 }

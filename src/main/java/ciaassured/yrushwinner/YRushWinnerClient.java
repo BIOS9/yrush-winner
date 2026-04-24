@@ -1,6 +1,7 @@
 package ciaassured.yrushwinner;
 
 import ciaassured.yrushwinner.infrastructure.ServiceLifecycle;
+import ciaassured.yrushwinner.infrastructure.YRushWinnerModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import net.fabricmc.api.ClientModInitializer;

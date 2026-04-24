@@ -45,10 +45,10 @@ public final class BotToggleKeybind implements ManagedService {
         ));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (binding.wasPressed() && client.player != null) {
-                BlockPos origin = client.player.getBlockPos();
-                List<BlockPos> path = navigator.findPath(origin, new YLevelGoal(100));
-                pathRenderer.setPath(path);
-                logger.info("Debug path randomised from {}", origin);
+//                BlockPos origin = client.player.getBlockPos();
+//                List<BlockPos> path = navigator.findPath(origin, new YLevelGoal(100));
+//                pathRenderer.setPath(path);
+//                logger.info("Debug path randomised from {}", origin);
             }
         });
     }
